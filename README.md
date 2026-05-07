@@ -2,7 +2,7 @@
 
 An enterprise-grade, Clean Architecture .NET 8 Web API for ingesting, categorizing, and aggregating financial transactions.
 
-## 🏗️ Architecture
+## Architecture
 
 The solution follows Clean Architecture and Domain-Driven Design (DDD) principles:
 
@@ -11,7 +11,7 @@ The solution follows Clean Architecture and Domain-Driven Design (DDD) principle
 - **Infrastructure**: Contains EF Core data access, Redis caching, third-party API mock integrations, and background services.
 - **Api**: The presentation layer containing Controllers, JWT Authentication, Global Exception Handling, and Serilog configuration.
 
-## 🚀 Key Features
+## Key Features
 
 1. **Idempotent Data Ingestion**:
    - Ingests from multiple sources (mock REST API, CSV File).
@@ -30,7 +30,7 @@ The solution follows Clean Architecture and Domain-Driven Design (DDD) principle
    - JWT-based Authentication.
    - Role-Based Access Control (`Admin` vs `User`).
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework**: .NET 8.0
 - **Database**: SQL Server 2022 (Entity Framework Core 8)
@@ -40,7 +40,7 @@ The solution follows Clean Architecture and Domain-Driven Design (DDD) principle
 - **Libraries**: AutoMapper, FluentValidation, CsvHelper
 - **Orchestration**: Docker Compose
 
-## 🧠 Architectural Decisions & Trade-offs
+## Architectural Decisions & Trade-offs
 
 1. **Modular Monolith over Microservices**: 
    - A single cohesive boundary minimizes deployment complexity while Clean Architecture ensures distinct separation of concerns. This allows for an easy transition to microservices later if scaling demands it.
@@ -55,7 +55,7 @@ The solution follows Clean Architecture and Domain-Driven Design (DDD) principle
 6. **Smart Caching**:
    - Redis selectively caches high-cost query results. Cache invalidation happens immediately via key prefixing (`RemoveByPrefixAsync("aggregations:")`) upon successful new data ingestion.
 
-## 🏃‍♂️ Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -99,7 +99,7 @@ To test secured endpoints, first get a token from the `/api/Auth/token` endpoint
 
 Click "Authorize" in Swagger and paste the token as: `Bearer <your-token>`.
 
-## 🧪 Testing
+## Testing
 
 The solution includes a comprehensive unit test suite using `xUnit`, `Moq`, and `FluentAssertions`.
 
