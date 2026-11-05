@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TransactionAggregator.Application.Common.Interfaces;
 using TransactionAggregator.Application.Common.Models;
-using TransactionAggregator.Domain.Interfaces;
 
 namespace TransactionAggregator.Application.Aggregations.Queries;
 
@@ -21,13 +20,14 @@ public sealed class GetTotalSpendByCategoryQueryHandler(
         GetTotalSpendByCategoryQuery request,
         CancellationToken cancellationToken)
     {
-        var cacheKey = CacheKeys.TotalSpendByCategory;
+        var cacheKey = CacheKeys.TotalSpendByCategory(request.DateFrom, request.DateTo);
 
         return await cache.GetOrSetAsync(
             cacheKey,
             async () =>
             {
                 var query = dbContext.Transactions
+                    .AsNoTracking()
                     .Where(t => t.CategoryId != null);
 
                 if (request.DateFrom.HasValue)
@@ -72,14 +72,18 @@ public sealed class GetMonthlySummaryQueryHandler(
             cacheKey,
             async () =>
             {
-                var transactions = await dbContext.Transactions
-                    .Where(t =>
-                        t.TransactionDate.Year == request.Year &&
-                        t.TransactionDate.Month == request.Month)
-                    .Include(t => t.Category)
-                    .ToListAsync(cancellationToken);
+                // Prefer an inclusive date range over Year/Month projections so SQL can use indexes.
+                var periodStart = new DateTime(request.Year, request.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var periodEnd = periodStart.AddMonths(1);
 
-                var byCategory = transactions
+                var monthQuery = dbContext.Transactions
+                    .AsNoTracking()
+                    .Where(t => t.TransactionDate >= periodStart && t.TransactionDate < periodEnd);
+
+                var totalSpend = await monthQuery.SumAsync(t => (decimal?)t.Amount, cancellationToken) ?? 0m;
+                var transactionCount = await monthQuery.CountAsync(cancellationToken);
+
+                var byCategory = await monthQuery
                     .Where(t => t.CategoryId != null)
                     .GroupBy(t => new { t.CategoryId, t.Category!.Name, t.Currency })
                     .Select(g => new SpendByCategoryDto
@@ -91,15 +95,15 @@ public sealed class GetMonthlySummaryQueryHandler(
                         Currency = g.Key.Currency
                     })
                     .OrderByDescending(x => x.TotalAmount)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
                 return new MonthlySummaryDto
                 {
                     Year = request.Year,
                     Month = request.Month,
-                    MonthName = new DateTime(request.Year, request.Month, 1).ToString("MMMM"),
-                    TotalSpend = transactions.Sum(t => t.Amount),
-                    TransactionCount = transactions.Count,
+                    MonthName = periodStart.ToString("MMMM"),
+                    TotalSpend = totalSpend,
+                    TransactionCount = transactionCount,
                     ByCategory = byCategory.AsReadOnly()
                 };
             },
@@ -121,9 +125,12 @@ public sealed class GetTopMerchantsQueryHandler(
         GetTopMerchantsQuery request,
         CancellationToken cancellationToken)
     {
+        var take = request.Take <= 0 ? 10 : request.Take;
+
         return await cache.GetOrSetAsync(
-            CacheKeys.TopMerchants,
+            CacheKeys.TopMerchants(take),
             async () => (IReadOnlyList<TopMerchantDto>)await dbContext.Transactions
+                .AsNoTracking()
                 .GroupBy(t => new { t.MerchantName, CategoryName = t.Category != null ? t.Category.Name : null })
                 .Select(g => new TopMerchantDto
                 {
@@ -133,7 +140,7 @@ public sealed class GetTopMerchantsQueryHandler(
                     CategoryName = g.Key.CategoryName
                 })
                 .OrderByDescending(x => x.TotalAmount)
-                .Take(request.Take)
+                .Take(take)
                 .ToListAsync(cancellationToken),
             expiry: TimeSpan.FromMinutes(20),
             cancellationToken: cancellationToken);

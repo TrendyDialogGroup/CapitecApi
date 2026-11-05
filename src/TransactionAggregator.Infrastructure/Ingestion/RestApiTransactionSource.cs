@@ -16,6 +16,10 @@ public sealed class RestApiTransactionSource(
 
     public async Task<IReadOnlyList<RawTransaction>> FetchAsync(CancellationToken ct = default)
     {
+        // httpClientFactory is intentionally retained so swapping this mock for a real
+        // upstream bank/gateway HttpClient registration is a one-line change.
+        ArgumentNullException.ThrowIfNull(httpClientFactory);
+
         var pipeline = pipelineProvider.GetPipeline("ExternalSource");
 
         return await pipeline.ExecuteAsync(async token =>

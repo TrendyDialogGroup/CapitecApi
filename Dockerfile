@@ -39,10 +39,13 @@ RUN mkdir -p /app/data/imports && chown appuser:appgroup /app/data/imports
 
 COPY --from=publish --chown=appuser:appgroup /app/publish .
 
+# Ensure import directory exists even if the compose bind-mount is absent
+RUN mkdir -p /app/data/imports && chown -R appuser:appgroup /app/data
+
 USER appuser
 
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
-ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_ENVIRONMENT=Docker
 
 ENTRYPOINT ["dotnet", "TransactionAggregator.Api.dll"]

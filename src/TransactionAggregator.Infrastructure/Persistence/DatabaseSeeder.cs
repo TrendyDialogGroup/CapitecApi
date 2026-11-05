@@ -8,7 +8,11 @@ public static class DatabaseSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context, ILogger logger)
     {
-        await context.Database.MigrateAsync();
+        // Relational providers use migrations; in-memory (tests) uses EnsureCreated.
+        if (context.Database.IsRelational())
+            await context.Database.MigrateAsync();
+        else
+            await context.Database.EnsureCreatedAsync();
 
         if (!await context.Categories.AnyAsync())
         {

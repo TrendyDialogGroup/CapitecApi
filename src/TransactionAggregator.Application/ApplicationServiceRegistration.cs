@@ -3,7 +3,6 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using TransactionAggregator.Application.Common.Behaviours;
-using TransactionAggregator.Application.Common.Mappings;
 
 namespace TransactionAggregator.Application;
 
@@ -17,8 +16,8 @@ public static class ApplicationServiceRegistration
     {
         var assembly = Assembly.GetExecutingAssembly();
 
-        // AutoMapper
-        services.AddAutoMapper(assembly);
+        // AutoMapper 15+ requires a configure action before assembly scanning
+        services.AddAutoMapper(cfg => { }, assembly);
 
         // FluentValidation
         services.AddValidatorsFromAssembly(assembly);

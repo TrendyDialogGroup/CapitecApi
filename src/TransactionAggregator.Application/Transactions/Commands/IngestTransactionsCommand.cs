@@ -1,11 +1,9 @@
-using AutoMapper;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using TransactionAggregator.Application.Common.Interfaces;
 using TransactionAggregator.Application.Common.Models;
 using TransactionAggregator.Domain.Entities;
-using TransactionAggregator.Domain.Enums;
 using TransactionAggregator.Domain.Interfaces;
 
 namespace TransactionAggregator.Application.Transactions.Commands;
@@ -32,8 +30,7 @@ public sealed class IngestTransactionsCommandHandler(
     IUnitOfWork unitOfWork,
     ICategorizationService categorizationService,
     ICacheService cacheService,
-    IMapper mapper,
-    Microsoft.Extensions.Logging.ILogger<IngestTransactionsCommandHandler> logger)
+    ILogger<IngestTransactionsCommandHandler> logger)
     : IRequestHandler<IngestTransactionsCommand, IngestResultDto>
 {
     public async Task<IngestResultDto> Handle(
@@ -120,7 +117,7 @@ public sealed class IngestTransactionsCommandHandler(
         if (ingested > 0)
         {
             logger.LogInformation("Transactions ingested, invalidating aggregation caches...");
-            await cacheService.RemoveByPrefixAsync("aggregations:", cancellationToken);
+            await cacheService.RemoveByPrefixAsync(CacheKeys.AggregationsPrefix, cancellationToken);
         }
 
         logger.LogInformation(

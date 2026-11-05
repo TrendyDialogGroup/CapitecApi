@@ -42,8 +42,8 @@ public static class InfrastructureServiceRegistration
         services.AddSingleton<ICategorizationService, CategorizationService>();
 
         // ── Caching ───────────────────────────────────────────────────────
-        var redisConnString = configuration.GetConnectionString("Redis") ?? "localhost:6379";
-        services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(sp => 
+        var redisConnString = configuration.GetConnectionString("Redis") ?? "localhost:6379,abortConnect=false";
+        services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(sp =>
             StackExchange.Redis.ConnectionMultiplexer.Connect(redisConnString));
             
         services.AddStackExchangeRedisCache(opts =>

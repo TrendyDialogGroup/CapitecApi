@@ -79,11 +79,16 @@ builder.Services.AddSwaggerGen(opts =>
 });
 
 // ── Health Checks ─────────────────────────────────────────────────────────────
-builder.Services.AddHealthChecks()
-    .AddDbContextCheck<ApplicationDbContext>("database")
-    .AddRedis(
+var healthChecks = builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ApplicationDbContext>("database");
+
+// Skip Redis probe in automated tests (cache is swapped for an in-memory double).
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    healthChecks.AddRedis(
         builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379",
         name: "redis");
+}
 
 var app = builder.Build();
 

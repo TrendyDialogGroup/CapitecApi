@@ -25,7 +25,7 @@ public sealed class CsvFileTransactionSource(
 
     public async Task<IReadOnlyList<RawTransaction>> FetchAsync(CancellationToken ct = default)
     {
-        var dir = options.Value.ImportDirectory;
+        var dir = ResolveImportDirectory(options.Value.ImportDirectory);
         var results = new List<RawTransaction>();
 
         if (!Directory.Exists(dir))
@@ -97,6 +97,31 @@ public sealed class CsvFileTransactionSource(
                 TransactionDate = now.AddDays(-rng.Next(0, 30))
             })
             .ToList();
+    }
+
+    /// <summary>
+    /// Resolves relative import paths against common run locations (cwd, publish dir, repo root).
+    /// Absolute paths are respected as-is so tests/config overrides stay predictable.
+    /// </summary>
+    private static string ResolveImportDirectory(string configuredPath)
+    {
+        if (string.IsNullOrWhiteSpace(configuredPath))
+            return configuredPath;
+
+        if (Path.IsPathRooted(configuredPath))
+            return configuredPath;
+
+        var candidates = new[]
+        {
+            Path.Combine(Directory.GetCurrentDirectory(), configuredPath),
+            Path.Combine(AppContext.BaseDirectory, configuredPath),
+            // Repo-root layout when running API from src/TransactionAggregator.Api
+            Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "data", "imports")),
+            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "data", "imports")),
+        };
+
+        return candidates.FirstOrDefault(Directory.Exists)
+               ?? Path.Combine(AppContext.BaseDirectory, configuredPath);
     }
 }
 

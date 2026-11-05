@@ -31,4 +31,12 @@
     <ProjectReference Include="..\TransactionAggregator.Infrastructure\TransactionAggregator.Infrastructure.csproj" />
   </ItemGroup>
 
+  <!-- Ship sample CSV with local runs and published Docker images -->
+  <ItemGroup>
+    <Content Include="..\..\data\imports\**\*"
+             Link="data\imports\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

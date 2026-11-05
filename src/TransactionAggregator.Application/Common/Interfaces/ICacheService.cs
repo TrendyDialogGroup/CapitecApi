@@ -14,14 +14,21 @@ public interface ICacheService
         CancellationToken cancellationToken = default);
 }
 
-/// <summary>Cache key constants — centralised to prevent typos.</summary>
+/// <summary>Cache key constants — centralised to prevent typos and include filter dimensions.</summary>
 public static class CacheKeys
 {
-    public const string TotalSpendByCategory = "aggregations:spend_by_category";
-    public const string TopMerchants = "aggregations:top_merchants";
-    public const string MonthlySummaryPrefix = "aggregations:monthly_summary:";
+    public const string AggregationsPrefix = "aggregations:";
     public const string Categories = "categories:all";
 
+    public static string TotalSpendByCategory(DateTime? dateFrom, DateTime? dateTo) =>
+        $"{AggregationsPrefix}spend_by_category:{Format(dateFrom)}:{Format(dateTo)}";
+
+    public static string TopMerchants(int take) =>
+        $"{AggregationsPrefix}top_merchants:{take}";
+
     public static string MonthlySummary(int year, int month) =>
-        $"{MonthlySummaryPrefix}{year}:{month:D2}";
+        $"{AggregationsPrefix}monthly_summary:{year}:{month:D2}";
+
+    private static string Format(DateTime? value) =>
+        value?.ToUniversalTime().ToString("O") ?? "all";
 }
